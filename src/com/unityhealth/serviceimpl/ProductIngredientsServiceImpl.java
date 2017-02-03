@@ -190,18 +190,25 @@ public class ProductIngredientsServiceImpl implements IProductIngredientsService
                                         //System.out.println("multiple....." + equiVal);
                                         String[] multiEquival = equiVal.split("\\|\\|");
                                         for (String singleEqui : multiEquival) {
-                                            // System.out.println("after split....." + singleEqui);
-                                            tempQty = equiVal.substring(singleEqui.indexOf("|") + 1, singleEqui.length());
-                                            if (tempQty != null && tempQty.contains(ingredient.getVName())) {
+                                             System.out.println("after split....." + singleEqui.toLowerCase() + "main ing" + ingredient.getVName().toLowerCase());
+                                            tempQty = singleEqui.substring(singleEqui.indexOf("|") + 1, singleEqui.length());
+                                            
+                                             
+                                            if (tempQty != null && singleEqui.toLowerCase().contains(ingredient.getVName().toLowerCase())) {
+                                                 System.out.println("after split.....tempQty" + tempQty + "main ing" + ingredient.getVName());
                                                 Matcher match = Pattern.compile("[0-9.]+|[a-z]+|[A-Z]+").matcher(tempQty);
                                                 int i = 0;
                                                 String unit = "";
                                                 while (match.find()) {
 
                                                     if (i == 0) {
+                                                        String matchedGroup = match.group();
+                                                          System.out.println("after split.....matchedGroup" + matchedGroup + " singleEqui " + singleEqui);
                                                         productIngAssoc.setVQty(match.group());
                                                         i = 1;
                                                     } else {
+                                                        String matchedGroup = match.group();
+                                                          System.out.println("after split.....matchedGroup" + matchedGroup + " singleEqui " + singleEqui);
                                                         unit = match.group();
                                                         break;
                                                     }
@@ -238,7 +245,7 @@ public class ProductIngredientsServiceImpl implements IProductIngredientsService
                     e.printStackTrace();
                 }
             }
-            setParentIdForAssoc(ingredientsJsonArray);
+            setParentIdForSingleAssoc(ingredientsJsonArray);
             System.out.println("Finished with ingredients too " + missingIngs);
         } catch (Exception e) {
             e.printStackTrace();
@@ -515,6 +522,7 @@ public class ProductIngredientsServiceImpl implements IProductIngredientsService
             try {
                 if (!iModel.getEquivalentValue().equals("")) {
                     String equiVal = iModel.getEquivalentValue();
+                    
                     String equivIng = equiVal.substring(equiVal.indexOf(".") + 1, equiVal.indexOf("|")).trim();
 //                    if (!iModel.getIngredientName().trim().equals("")) {
 //                        prodIngQueryMap.put("vName", iModel.getIngredientName());
@@ -597,6 +605,96 @@ public class ProductIngredientsServiceImpl implements IProductIngredientsService
         }
         piAssocDao.commitTransaction();
     }
+    
+     private void setParentIdForSingleAssoc(IngredientsModel[] ingredientsJsonArray) {
+        Map<String, String> prodIngQueryMap = new TreeMap<String, String>();
+        Map<String, Integer> prodIngAssocMap = new TreeMap<String, Integer>();
+        Map<String, String> prodQueryMap = new TreeMap<String, String>();
+        List<Tblproductingredients> result = null;
+        List<Tblproductingredients> equivResult = null;
+        List<Tblproductingredientassoc> assocResultMain = null;
+        List<Tblproductingredientassoc> assocResultEquiv = null;
+        List<Tblproduct> prodResult = null;
+        int i = 0;
+        
+        
+        piAssocDao.beginTransaction();
+        for (IngredientsModel iModel : ingredientsJsonArray) {
+
+            try {
+                String equiVal = iModel.getEquivalentValue();
+                 if (equiVal != null && !equiVal.trim().equalsIgnoreCase("") && equiVal.indexOf("||") < 0) {
+                    someRandomName(equiVal, iModel);
+                      // String singleEquival = getEquivalentIngredientName(equiVal);
+                    /*
+                    
+                    String equivIng = getEquivalentIngredientName(equiVal);
+
+                    if (!iModel.getIngredientName().trim().equals("")) {
+                        if (iModel.getIngredientName().trim().startsWith("as ")) {
+                            String ingName = iModel.getIngredientName().substring(iModel.getIngredientName().indexOf("as ") + 3, iModel.getIngredientName().length());
+                            System.out.println("was as removed?" + ingName);
+                            prodIngQueryMap.put("vName", ingName);
+                        } else {
+                            prodIngQueryMap.put("vName", iModel.getIngredientName());
+                        }
+
+                    } else if (!iModel.getIngredientScientific().trim().equals("")) {
+
+                        if (iModel.getIngredientScientific().trim().startsWith("as ")) {
+                            String scFCName = iModel.getIngredientScientific().substring(iModel.getIngredientScientific().indexOf("as ") + 3, iModel.getIngredientScientific().length());
+                            System.out.println("was as removed?" + scFCName);
+                            prodIngQueryMap.put("vName", scFCName);
+                        } else {
+                            prodIngQueryMap.put("vName", iModel.getIngredientScientific());
+                        }
+                    }
+                    prodQueryMap.put("vProductId", iModel.getProductID());
+                    prodResult = productDao.readByNameDQuery("Tblproduct.findByVProductId", prodQueryMap);
+                    result = piDao.readByNameDQuery("Tblproductingredients.findByVName", prodIngQueryMap); //get main ing id from
+                    for (Tblproduct prod : prodResult) {
+                        for (Tblproductingredients mainIng : result) {
+                            prodIngAssocMap.put("iIngredientID", mainIng.getIID());
+                            prodIngAssocMap.put("iProductID", prod.getIID());
+                            assocResultMain = piAssocDao.readByNameDQueryInt("Tblproductingredientassoc.findByIIngredientIDIproductID", prodIngAssocMap);
+                            if (assocResultMain.size() > 0) {
+                                prodIngQueryMap = new TreeMap<String, String>();
+                                prodIngQueryMap.put("vName", equivIng);
+                                equivResult = piDao.readByNameDQuery("Tblproductingredients.findByVName", prodIngQueryMap);
+                                //break;
+                                for (Tblproductingredients equiIng : equivResult) {
+                                    prodIngAssocMap.put("iIngredientID", equiIng.getIID());
+                                    prodIngAssocMap.put("iProductID", prod.getIID());
+                                    assocResultEquiv = piAssocDao.readByNameDQueryInt("Tblproductingredientassoc.findByIIngredientIDIproductID", prodIngAssocMap);
+                                    if (assocResultEquiv.size() > 0) {
+                                        //       break;
+                                        if (assocResultMain != null && !assocResultMain.isEmpty() && assocResultEquiv != null && assocResultEquiv.size() > 0 && assocResultEquiv.get(0).getIParentID() == null) {
+                                            assocResultEquiv.get(0).setIParentID(assocResultMain.get(0).getIID());
+                                            piAssocDao.create(assocResultEquiv.get(0));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+               */ }if (equiVal != null && !equiVal.trim().equalsIgnoreCase("") && equiVal.indexOf("||") > 0) {
+                        //System.out.println("multiple....." + equiVal);
+                        String[] multiEquival = equiVal.split("\\|\\|");
+                         piAssocDao.beginTransaction();
+                        for (String singleEqui : multiEquival) {
+                            // System.out.println("after split....." + singleEqui);
+
+                            //String equi = getEquivalentIngredientName(singleEqui);
+                            someRandomName(singleEqui, iModel);
+                        } piAssocDao.commitTransaction();
+               }
+            } catch (Exception e) {
+                System.out.println("Exception occurred for " + iModel.getEquivalentValue() + "number " + ++i);
+            }
+        }
+        piAssocDao.commitTransaction();
+    }
 
     private String getEquivalentIngredientName(String equiVal) {
         if (equiVal.indexOf(".") > 0 && equiVal.indexOf("|") > 0) {
@@ -616,5 +714,68 @@ public class ProductIngredientsServiceImpl implements IProductIngredientsService
             return equiVal.substring(equiVal.indexOf("standardized to") + "standardized to".length(), equiVal.indexOf("|")).trim();
         }
         return null;
+    }
+    
+    private void someRandomName(String equiVal,IngredientsModel iModel){
+        Map<String, String> prodIngQueryMap = new TreeMap<String, String>();
+ Map<String, String> prodQueryMap = new TreeMap<String, String>();
+         List<Tblproduct> prodResult = null;              // String singleEquival = getEquivalentIngredientName(equiVal);
+                 List<Tblproductingredients> result = null;    
+                    Map<String, Integer> prodIngAssocMap = new TreeMap<String, Integer>();
+                    List<Tblproductingredientassoc> assocResultMain = null;
+                     List<Tblproductingredients> equivResult = null;
+        
+        List<Tblproductingredientassoc> assocResultEquiv = null;
+                    String equivIng = getEquivalentIngredientName(equiVal);
+
+                    if (!iModel.getIngredientName().trim().equals("")) {
+                        if (iModel.getIngredientName().trim().startsWith("as ")) {
+                            String ingName = iModel.getIngredientName().substring(iModel.getIngredientName().indexOf("as ") + 3, iModel.getIngredientName().length());
+                            System.out.println("was as removed?" + ingName);
+                            prodIngQueryMap.put("vName", ingName);
+                        } else {
+                            prodIngQueryMap.put("vName", iModel.getIngredientName());
+                        }
+
+                    } else if (!iModel.getIngredientScientific().trim().equals("")) {
+
+                        if (iModel.getIngredientScientific().trim().startsWith("as ")) {
+                            String scFCName = iModel.getIngredientScientific().substring(iModel.getIngredientScientific().indexOf("as ") + 3, iModel.getIngredientScientific().length());
+                            System.out.println("was as removed?" + scFCName);
+                            prodIngQueryMap.put("vName", scFCName);
+                        } else {
+                            prodIngQueryMap.put("vName", iModel.getIngredientScientific());
+                        }
+                    }
+                    prodQueryMap.put("vProductId", iModel.getProductID());
+                    prodResult = productDao.readByNameDQuery("Tblproduct.findByVProductId", prodQueryMap);
+                    result = piDao.readByNameDQuery("Tblproductingredients.findByVName", prodIngQueryMap); //get main ing id from
+                    for (Tblproduct prod : prodResult) {
+                        for (Tblproductingredients mainIng : result) {
+                            prodIngAssocMap.put("iIngredientID", mainIng.getIID());
+                            prodIngAssocMap.put("iProductID", prod.getIID());
+                            assocResultMain = piAssocDao.readByNameDQueryInt("Tblproductingredientassoc.findByIIngredientIDIproductID", prodIngAssocMap);
+                            if (assocResultMain.size() > 0) {
+                                prodIngQueryMap = new TreeMap<String, String>();
+                                prodIngQueryMap.put("vName", equivIng);
+                                equivResult = piDao.readByNameDQuery("Tblproductingredients.findByVName", prodIngQueryMap);
+                                //break;
+                                for (Tblproductingredients equiIng : equivResult) {
+                                    prodIngAssocMap.put("iIngredientID", equiIng.getIID());
+                                    prodIngAssocMap.put("iProductID", prod.getIID());
+                                    assocResultEquiv = piAssocDao.readByNameDQueryInt("Tblproductingredientassoc.findByIIngredientIDIproductID", prodIngAssocMap);
+                                    if (assocResultEquiv.size() > 0) {
+                                        //       break;
+                                        if (assocResultMain != null && !assocResultMain.isEmpty() && assocResultEquiv != null && assocResultEquiv.size() > 0 && assocResultEquiv.get(0).getIParentID() == null) {
+                                            assocResultEquiv.get(0).setIParentID(assocResultMain.get(0).getIID());
+                                            piAssocDao.create(assocResultEquiv.get(0));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                
     }
 }
