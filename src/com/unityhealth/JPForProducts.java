@@ -5,6 +5,7 @@
  */
 package com.unityhealth;
 
+import com.unityhealth.model.BiocIngredientsModel;
 import com.unityhealth.model.IngredientsModel;
 import com.unityhealth.model.ProductModel;
 import com.unityhealth.parser.UHJParser;
@@ -20,6 +21,7 @@ import java.util.logging.Logger;
  *
  * @author Clinton
  */
+
 public class JPForProducts {
     
    public static void main(String[] agrs) {
@@ -27,18 +29,19 @@ public class JPForProducts {
         UHJParser jParser = new UHJParser();
         IProductService productService = new ProductServiceImpl();
         IProductIngredientsService ingredientsService = new ProductIngredientsServiceImpl();
+        BiocIngredientsModel biocIngModel = new BiocIngredientsModel();
       ProductModel[] pModel = new  ProductModel[1];
      IngredientsModel []iModel = new IngredientsModel[1];
         try {
-            // jParser.parse("E:\\biocueticalsload\\product.json",pModel);
+//             jParser.parse("E:\\biocueticalsload\\28-11-2016\\product\\product.json",biocIngModel);
             // jParser.parse("E:\\biocueticalsload\\product-ingredients.json",iModel);
             //if(productService.saveProduct((ProductModel[])(jParser.parse("E:\\biocueticalsload\\product.json",pModel)))){
             long startTime = System.currentTimeMillis();
-
-
-            boolean success = productService.saveProduct((ProductModel[])(jParser.parse("E:\\biocueticalsload\\imgateway-json-item-extract\\products.json",pModel)))
-                &&   ingredientsService.saveProductIngredients((IngredientsModel[])(jParser.parse("E:\\biocueticalsload\\imgateway-json-item-extract\\product-ingredients.json",iModel)))
-                ;
+            boolean success = productService.saveProduct((BiocIngredientsModel) jParser.parse("E:\\biocueticalsload\\ProductLoadBioc.json",biocIngModel));
+ //jParser.parse("E:\\biocueticalsload\\ProductLoadBioc.json",biocIngModel);
+           // boolean success = productService.saveProduct((ProductModel[])(jParser.parse("E:\\biocueticalsload\\imgateway-json-item-extract\\products.json",pModel)))
+             //   &&   ingredientsService.saveProductIngredients((IngredientsModel[])(jParser.parse("E:\\biocueticalsload\\imgateway-json-item-extract\\product-ingredients.json",iModel)))
+               // ;
                 if(success){
                
                 System.out.println("yippi");

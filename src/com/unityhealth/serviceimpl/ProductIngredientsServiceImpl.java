@@ -21,7 +21,11 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  *
@@ -82,72 +86,157 @@ public class ProductIngredientsServiceImpl implements IProductIngredientsService
 
                 if (missingIngredients != null) {
                     missingIngs += missingIngredients.size();
-                    piDao.beginTransaction();
-                    for (String missingIngredient : missingIngredients) {
-                        Tblproductingredients productingredient = new Tblproductingredients();
-                        IngredientsModel iModelRaw = getIngredientModelFromIgredientName(missingIngredient, ingredientsJsonArray, false);
-                        if (iModelRaw != null) {
-                            productingredient.setvIngredientID(iModelRaw.getIngredientID());
-                        } else {
-                            iModelRaw = getIngredientModelFromIgredientName(missingIngredient, ingredientsJsonArray, true);
+                    try {
+                        piDao.beginTransaction();
+                        for (String missingIngredient : missingIngredients) {
+                            Tblproductingredients productingredient = new Tblproductingredients();
+                            productingredient.setBCustom(Boolean.FALSE);
+                            IngredientsModel iModelRaw = getIngredientModelFromIgredientName(missingIngredient, ingredientsJsonArray, false);
                             if (iModelRaw != null) {
                                 productingredient.setvIngredientID(iModelRaw.getIngredientID());
+                                System.out.println("iModelRaw.getCommonName() " + iModelRaw.getCommonName());
+                                productingredient.setBCustom(Boolean.FALSE);
+                                productingredient.setVCommonName(iModelRaw.getCommonName());
+                                productingredient.setvDisplayName(iModelRaw.getDisplayName());
+                            } else {
+                                iModelRaw = getIngredientModelFromIgredientName(missingIngredient, ingredientsJsonArray, true);
+                                if (iModelRaw != null) {
+                                    // productingredient.setvIngredientID(iModelRaw.getIngredientID());
+                                    // productingredient.setVCommonName(iModelRaw.getCommonName());
+                                    // productingredient.setvDisplayName(iModelRaw.getDisplayName());
+                                    // productingredient.setBCustom(Boolean.FALSE);
+                                    System.out.println("iModelRaw.getCommonName() " + iModelRaw.getEquivalentValue());
+                                }
                             }
+
+                            productingredient.setVName(missingIngredient);
+                            System.out.println("missing ingredient about to insert " + missingIngredient);
+                            piDao.create(productingredient);
                         }
-
-                        productingredient.setVName(missingIngredient);
-
-                        piDao.create(productingredient);
+                        piDao.commitTransaction();
+                    } catch (Exception e) {
+                        //System.out.println("missing ingredient failed to insert " + missingIngredient);
+                        e.printStackTrace();
                     }
-                    piDao.commitTransaction();
                     result = piDao.readByNameDQueryList("Tblproductingredients.findByVNameLst", params);
                 }
                 prodQueryMap.put("vProductId", prodId);
                 productsLst = productDao.readByNameDQuery("Tblproduct.findByVProductId", prodQueryMap);
+                System.out.println("the product List " + productsLst);
                 //for main ingredients
-                productDao.beginTransaction();
-                piAssocDao.beginTransaction();
-                for (Tblproduct product : productsLst) {
-                    for (Tblproductingredients ingredient : result) {
-                        Tblproductingredientassoc productIngAssoc = new Tblproductingredientassoc();
-                        searchSB = new StringBuilder();
-                        //Tblproductingredientassoctemp productIngAssocTemp = new Tblproductingredientassoctemp();
-                        productIngAssoc.setIIngredientID(ingredient.getIID());
-                        //productIngAssocTemp.setIIngredientID(ingredient.getIID());
-                        productIngAssoc.setIProductID(product.getIID());
-                        //productIngAssocTemp.setIProductID(product.getIID());
-                        searchSB.append(product.getVSearchText());
-                        searchSB.append(ingredient.getVName());
-                        searchSB.append("#");
-                        IngredientsModel iModelMainIng = getIngredientModelFromIgredientName(ingredient.getVName(), ingredientsJsonArray, false);
-                        if (iModelMainIng != null) {
-                            tempQty = addPipeToQty(iModelMainIng.getQuantity());
+                try {
+                    productDao.beginTransaction();
+                    piAssocDao.beginTransaction();
+                    for (Tblproduct product : productsLst) {
+                        for (Tblproductingredients ingredient : result) {
+                            Tblproductingredientassoc productIngAssoc = new Tblproductingredientassoc();
+                            searchSB = new StringBuilder();
+                            //Tblproductingredientassoctemp productIngAssocTemp = new Tblproductingredientassoctemp();
+                            productIngAssoc.setIIngredientID(ingredient.getIID());
+                            //productIngAssocTemp.setIIngredientID(ingredient.getIID());
+                            productIngAssoc.setIProductID(product.getIID());
+                            //productIngAssocTemp.setIProductID(product.getIID());
+                            searchSB.append(product.getVSearchText());
+                            searchSB.append(ingredient.getVName());
+                            searchSB.append("#");
+                            IngredientsModel iModelMainIng = getIngredientModelFromIgredientName(ingredient.getVName(), ingredientsJsonArray, false);
+                            if (iModelMainIng != null) {
+                                //tempQty = addPipeToQty(iModelMainIng.getQuantity());
+                                tempQty = iModelMainIng.getQuantity();
+                                Matcher match = Pattern.compile("[0-9.]+|[a-z]+|[A-Z]+").matcher(iModelMainIng.getQuantity());
+                                // System.out.println("group count " + match.groupCount());
+                                int i = 0;
+                                String unit = "";
+                                while (match.find()) {
+                                    //  System.out.println(match.group(0)+ "group 0");
+                                    if (i == 0) {
+                                        productIngAssoc.setVQty(match.group());
+                                        i = 1;
+                                    } else {
+                                        unit = match.group();
+                                                break;
+                                    }
 
-                        } else {
-                            IngredientsModel iModelEquiv = getIngredientModelFromIgredientName(ingredient.getVName(), ingredientsJsonArray, true);
-                            if (iModelEquiv != null) {
-                                String equiVal = iModelEquiv.getEquivalentValue();
-                                tempQty = addPipeToQty(equiVal.substring(equiVal.indexOf("|") + 1, equiVal.length()));
+                                    //System.out.println(match.group());
+                                }
+                                productIngAssoc.setVQtyUnit(unit);
 
+                            } else {
+                                IngredientsModel iModelEquiv = getIngredientModelFromIgredientName(ingredient.getVName(), ingredientsJsonArray, true);
+                                if (iModelEquiv != null) {
+                                    String equiVal = iModelEquiv.getEquivalentValue();
+
+                                    if (equiVal != null && !equiVal.trim().equalsIgnoreCase("") && equiVal.indexOf("||") < 0) {
+
+                                        tempQty = equiVal.substring(equiVal.indexOf("|") + 1, equiVal.length());
+                                        Matcher match = Pattern.compile("[0-9.]+|[a-z]+|[A-Z]+").matcher(tempQty);
+                                        int i = 0;
+                                        String unit = "";
+                                        while (match.find()) {
+
+                                            if (i == 0) {
+                                                productIngAssoc.setVQty(match.group());
+                                                i = 1;
+                                            } else {
+                                                unit = match.group();
+                                                break;
+                                            }
+
+                                        }
+                                        productIngAssoc.setVQtyUnit(unit);
+
+                                    }
+                                    if (equiVal != null && !equiVal.trim().equalsIgnoreCase("") && equiVal.indexOf("||") > 0) {
+                                        //System.out.println("multiple....." + equiVal);
+                                        String[] multiEquival = equiVal.split("\\|\\|");
+                                        for (String singleEqui : multiEquival) {
+                                            // System.out.println("after split....." + singleEqui);
+                                            tempQty = equiVal.substring(singleEqui.indexOf("|") + 1, singleEqui.length());
+                                            if (tempQty != null && tempQty.contains(ingredient.getVName())) {
+                                                Matcher match = Pattern.compile("[0-9.]+|[a-z]+|[A-Z]+").matcher(tempQty);
+                                                int i = 0;
+                                                String unit = "";
+                                                while (match.find()) {
+
+                                                    if (i == 0) {
+                                                        productIngAssoc.setVQty(match.group());
+                                                        i = 1;
+                                                    } else {
+                                                        unit = match.group();
+                                                        break;
+                                                    }
+
+                                                }
+                                                productIngAssoc.setVQtyUnit(unit);
+                                                break;
+                                            }
+
+                                        }
+
+                                    }
+                                    // tempQty = equiVal.substring(equiVal.indexOf("|") + 1, equiVal.length());
+                                }
                             }
-                        }
 
-                        //for main ing
-                        if (tempQty != null) {
+                            //for main ing
+                            /*if (tempQty != null) {
                             String[] tempQtyArr = tempQty.split("\\|");
                             productIngAssoc.setVQty(tempQtyArr[0]);
-                            //  productIngAssocTemp.setVQty(tempQtyArr[0]);
                             productIngAssoc.setVQtyUnit(tempQtyArr[1]);
-                            // productIngAssocTemp.setVQtyUnit(tempQtyArr[1]);
+                            
+                        }*/
+                            tempQty = null;
+
+                            System.out.println("assoc getting persisted" + productIngAssoc.getIIngredientID());
+                            piAssocDao.create(productIngAssoc);
                         }
-                        tempQty = null;
-                        // assocTempLst.add(productIngAssocTemp);
-                        piAssocDao.create(productIngAssoc);
+                        product.setVSearchText(searchSB.toString());
                     }
-                    product.setVSearchText(searchSB.toString());
+                    piAssocDao.commitTransaction();
+                    productDao.commitTransaction();
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-                piAssocDao.commitTransaction();
-                productDao.commitTransaction();
             }
             setParentIdForAssoc(ingredientsJsonArray);
             System.out.println("Finished with ingredients too " + missingIngs);
@@ -164,6 +253,7 @@ public class ProductIngredientsServiceImpl implements IProductIngredientsService
 
         Map<String, List<String>> prodIngredientsLstMap = new TreeMap<String, List<String>>();
         List<String> ingList = null;
+
         for (IngredientsModel iModel : ingredientsJsonArray) {
             try {
                 if (prodIngredientsLstMap.get(iModel.getProductID()) == null) {
@@ -174,15 +264,59 @@ public class ProductIngredientsServiceImpl implements IProductIngredientsService
                 }
                 if (!iModel.getEquivalentValue().equals("")) {
                     String equiVal = iModel.getEquivalentValue();
-                    if (equiVal.indexOf(".") > 0 && equiVal.indexOf("|") > 0) {
-                        ingList.add(equiVal.substring(equiVal.indexOf(".") + 1, equiVal.indexOf("|")).trim());
+                    if (equiVal != null && !equiVal.trim().equalsIgnoreCase("") && equiVal.indexOf("||") < 0) {
+
+                        String singleEquival = getEquivalentIngredientName(equiVal);
+                        if (singleEquival != null) {
+                            ingList.add(singleEquival);
+                        }
                     }
+                    if (equiVal != null && !equiVal.trim().equalsIgnoreCase("") && equiVal.indexOf("||") > 0) {
+                        //System.out.println("multiple....." + equiVal);
+                        String[] multiEquival = equiVal.split("\\|\\|");
+                        for (String singleEqui : multiEquival) {
+                            // System.out.println("after split....." + singleEqui);
+
+                            String equi = getEquivalentIngredientName(singleEqui);
+                            if (equi != null) {
+                                ingList.add(equi);
+                            }
+                        }
+
+                    }
+                    /*String equiVal = iModel.getEquivalentValue();
+                    if (equiVal.indexOf(".") > 0 && equiVal.indexOf("|") > 0) {
+                        if(equiVal.indexOf("to ")>0){
+                            ingList.add(equiVal.substring(equiVal.indexOf("to ") + 3, equiVal.indexOf("|")).trim());
+                        }else{
+                            ingList.add(equiVal.substring(equiVal.indexOf(".") + 1, equiVal.indexOf("|")).trim());
+                        }
+                        
+                    }else if(equiVal.startsWith("standardized to")){
+                         ingList.add(equiVal.substring(equiVal.indexOf("standardized to") + "standardized to".length(), equiVal.indexOf("|")).trim());
+                    }*/
                 }
                 if (!iModel.getQuantity().equals("")) {
                     if (!iModel.getIngredientName().trim().equals("")) {
-                        ingList.add(iModel.getIngredientName());
+                        if (iModel.getIngredientName().trim().startsWith("as ")) {
+                            ingList.add(iModel.getIngredientName().substring(iModel.getIngredientName().indexOf("as ") + 3, iModel.getIngredientName().length()));
+                        } else {
+                            ingList.add(iModel.getIngredientName());
+                        }
+
                     } else if (!iModel.getIngredientScientific().trim().equals("")) {
-                        ingList.add(iModel.getIngredientScientific());
+                        if (iModel.getIngredientScientific().trim().startsWith("as ")) {
+                            ingList.add(iModel.getIngredientScientific().substring(iModel.getIngredientScientific().indexOf("as ") + 3, iModel.getIngredientScientific().length()));
+                        } else {
+                            ingList.add(iModel.getIngredientScientific());
+                        }
+                    } else if (iModel.getCommonName() != null && !iModel.getCommonName().trim().equals("")) {
+                        if (iModel.getCommonName().trim().startsWith("as ")) {
+                            ingList.add(iModel.getCommonName().substring(iModel.getCommonName().indexOf("as ") + 3, iModel.getCommonName().length()));
+                        } else {
+                            ingList.add(iModel.getCommonName());
+                        }
+
                     }
                 }
                 prodIngredientsLstMap.put(iModel.getProductID(), ingList);
@@ -204,12 +338,16 @@ public class ProductIngredientsServiceImpl implements IProductIngredientsService
 
     private List<String> findMissingIngredients(List<String> expectedIngredients, List<Tblproductingredients> existingIngredientsLst) {
         List<String> existingIngredients = prepareExistingIngredients(existingIngredientsLst);
-        if (existingIngredients.containsAll(expectedIngredients)) {
+        Set<String> existingIngredientsSet = new TreeSet<String>((String.CASE_INSENSITIVE_ORDER));
+        Set<String> expectedIngredientsSet = new TreeSet<String>((String.CASE_INSENSITIVE_ORDER));
+        existingIngredientsSet.addAll(existingIngredients);
+        expectedIngredientsSet.addAll(expectedIngredients);
+        if (existingIngredientsSet.containsAll(expectedIngredientsSet)) {
             return null;
         }
-        if (existingIngredients.size() <= expectedIngredients.size()) {
-            expectedIngredients.removeAll(existingIngredients);
-            return expectedIngredients;
+        if (existingIngredientsSet.size() <= expectedIngredientsSet.size()) {
+            expectedIngredientsSet.removeAll(existingIngredientsSet);
+            return new ArrayList(expectedIngredientsSet);
         }
 
         return null;
@@ -219,19 +357,58 @@ public class ProductIngredientsServiceImpl implements IProductIngredientsService
         try {
             for (IngredientsModel iModel : ingredientsJsonArray) {
                 if (!iModel.getIngredientName().trim().equals("")) {
-                    if (iModel.getIngredientName().trim().equalsIgnoreCase(ingredientName) && !euivalance) {
+                    if (iModel.getIngredientName().trim().startsWith("as ")) {
+                        if (iModel.getIngredientName().substring(iModel.getIngredientName().indexOf("as ") + 3, iModel.getIngredientName().length()).equalsIgnoreCase(ingredientName)) {
+                            return iModel;
+                        }
+                    } else if (iModel.getIngredientName().trim().equalsIgnoreCase(ingredientName) && !euivalance) {
                         return iModel;
                     }
+
                 } else if (!iModel.getIngredientScientific().trim().equals("")) {
-                    if (iModel.getIngredientScientific().trim().equalsIgnoreCase(ingredientName) && !euivalance) {
+                    if (iModel.getIngredientScientific().trim().startsWith("as ")) {
+                        if (iModel.getIngredientScientific().substring(iModel.getIngredientScientific().indexOf("as ") + 3, iModel.getIngredientScientific().length()).equalsIgnoreCase(ingredientName)) {
+                            return iModel;
+                        }
+                    } else if (iModel.getIngredientScientific().trim().equalsIgnoreCase(ingredientName) && !euivalance) {
                         return iModel;
                     }
+                } else if (iModel.getCommonName() != null && !iModel.getCommonName().trim().equals("")) {
+                    if (iModel.getCommonName().trim().startsWith("as ")) {
+                        if (iModel.getCommonName().substring(iModel.getCommonName().indexOf("as ") + 3, iModel.getCommonName().length()).equalsIgnoreCase(ingredientName)) {
+                            return iModel;
+                        }
+                    } else if (iModel.getCommonName().trim().equalsIgnoreCase(ingredientName) && !euivalance) {
+                        return iModel;
+                    }
+
                 }
 
                 if (!iModel.getEquivalentValue().equals("") && euivalance) {
-                    String equiVal = iModel.getEquivalentValue();
+                    /* String equiVal = iModel.getEquivalentValue();
                     if (equiVal.substring(equiVal.indexOf(".") + 1, equiVal.indexOf("|")).trim().equalsIgnoreCase(ingredientName)) {
                         return iModel;
+                    }*/
+                    String equiVal = iModel.getEquivalentValue();
+                    if (equiVal != null && !equiVal.trim().equalsIgnoreCase("") && equiVal.indexOf("||") < 0) {
+
+                        String singleEquival = getEquivalentIngredientName(equiVal);
+                        if (singleEquival != null && singleEquival.equalsIgnoreCase(ingredientName)) {
+                            return iModel;
+                        }
+                    }
+                    if (equiVal != null && !equiVal.trim().equalsIgnoreCase("") && equiVal.indexOf("||") > 0) {
+                        //System.out.println("multiple....." + equiVal);
+                        String[] multiEquival = equiVal.split("\\|\\|");
+                        for (String singleEqui : multiEquival) {
+                            // System.out.println("after split....." + singleEqui);
+
+                            String equi = getEquivalentIngredientName(singleEqui);
+                            if (equi != null && equi.equalsIgnoreCase(ingredientName)) {
+                                return iModel;
+                            }
+                        }
+
                     }
 
                 }
@@ -305,7 +482,7 @@ public class ProductIngredientsServiceImpl implements IProductIngredientsService
                         stringBuilder.append("|");
                         stringBuilder.append(strQty);
                         return stringBuilder.toString();
-                    } else if (strQty != null && !strQty.equals("") && ((qty.indexOf(strQty) > 0 && qty.indexOf(strQty) == qty.length() - 1 )&& (!qty.contains("mg") && !qty.contains("mcg") && !qty.contains("ng")))) {//if (strQty != null && !strQty.equals("") && (qty.indexOf(strQty) == qty.length() - 1 && strQty.equals("g"))) {
+                    } else if (strQty != null && !strQty.equals("") && ((qty.indexOf(strQty) > 0 && qty.indexOf(strQty) == qty.length() - 1) && (!qty.contains("mg") && !qty.contains("mcg") && !qty.contains("ng")))) {//if (strQty != null && !strQty.equals("") && (qty.indexOf(strQty) == qty.length() - 1 && strQty.equals("g"))) {
                         StringBuilder stringBuilder = new StringBuilder(qty.substring(0, qty.indexOf(strQty)));
                         stringBuilder.append("|");
                         stringBuilder.append(strQty);
@@ -339,10 +516,29 @@ public class ProductIngredientsServiceImpl implements IProductIngredientsService
                 if (!iModel.getEquivalentValue().equals("")) {
                     String equiVal = iModel.getEquivalentValue();
                     String equivIng = equiVal.substring(equiVal.indexOf(".") + 1, equiVal.indexOf("|")).trim();
+//                    if (!iModel.getIngredientName().trim().equals("")) {
+//                        prodIngQueryMap.put("vName", iModel.getIngredientName());
+//                    } else {
+//                        prodIngQueryMap.put("vName", iModel.getIngredientScientific());
+//                    }
                     if (!iModel.getIngredientName().trim().equals("")) {
-                        prodIngQueryMap.put("vName", iModel.getIngredientName());
-                    } else {
-                        prodIngQueryMap.put("vName", iModel.getIngredientScientific());
+                        if (iModel.getIngredientName().trim().startsWith("as ")) {
+                            String ingName = iModel.getIngredientName().substring(iModel.getIngredientName().indexOf("as ") + 3, iModel.getIngredientName().length());
+                            System.out.println("was as removed?" + ingName);
+                            prodIngQueryMap.put("vName", ingName);
+                        } else {
+                            prodIngQueryMap.put("vName", iModel.getIngredientName());
+                        }
+
+                    } else if (!iModel.getIngredientScientific().trim().equals("")) {
+
+                        if (iModel.getIngredientScientific().trim().startsWith("as ")) {
+                            String scFCName = iModel.getIngredientScientific().substring(iModel.getIngredientScientific().indexOf("as ") + 3, iModel.getIngredientScientific().length());
+                            System.out.println("was as removed?" + scFCName);
+                            prodIngQueryMap.put("vName", scFCName);
+                        } else {
+                            prodIngQueryMap.put("vName", iModel.getIngredientScientific());
+                        }
                     }
                     prodQueryMap.put("vProductId", iModel.getProductID());
                     prodResult = productDao.readByNameDQuery("Tblproduct.findByVProductId", prodQueryMap);
@@ -400,5 +596,25 @@ public class ProductIngredientsServiceImpl implements IProductIngredientsService
             }
         }
         piAssocDao.commitTransaction();
+    }
+
+    private String getEquivalentIngredientName(String equiVal) {
+        if (equiVal.indexOf(".") > 0 && equiVal.indexOf("|") > 0) {
+            if (equiVal.indexOf("to ") > 0) {
+                //System.out.println(equiVal.substring(equiVal.indexOf("to ") + 3, equiVal.indexOf("|")).trim());
+                //ingList.add(equiVal.substring(equiVal.indexOf("to ") + 3, equiVal.indexOf("|")).trim());
+                return equiVal.substring(equiVal.indexOf("to ") + 3, equiVal.indexOf("|")).trim();
+            } else {
+                //System.out.println(equiVal.substring(equiVal.indexOf(". ") + 2, equiVal.indexOf("|")).trim());
+                // ingList.add(equiVal.substring(equiVal.indexOf(". ") + 2, equiVal.indexOf("|")).trim());
+                return equiVal.substring(equiVal.indexOf(". ") + 2, equiVal.indexOf("|")).trim();
+            }
+
+        } else if (equiVal.startsWith("standardized to")) {
+            //System.out.println(equiVal.substring(equiVal.indexOf("standardized to") + "standardized to".length(), equiVal.indexOf("|")).trim());
+            //ingList.add(equiVal.substring(equiVal.indexOf("standardized to") + "standardized to".length(), equiVal.indexOf("|")).trim());
+            return equiVal.substring(equiVal.indexOf("standardized to") + "standardized to".length(), equiVal.indexOf("|")).trim();
+        }
+        return null;
     }
 }

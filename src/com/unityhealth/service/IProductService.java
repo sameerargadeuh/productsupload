@@ -5,6 +5,7 @@
  */
 package com.unityhealth.service;
 
+import com.unityhealth.model.BiocIngredientsModel;
 import com.unityhealth.model.ProductModel;
 
 /**
@@ -13,5 +14,5 @@ import com.unityhealth.model.ProductModel;
  */
 public interface IProductService extends IUHService {
     public boolean saveProduct(ProductModel[] productJsonArray);
-   
+    public boolean saveProduct(BiocIngredientsModel productJson);
 }

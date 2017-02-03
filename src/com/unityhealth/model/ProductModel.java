@@ -22,7 +22,8 @@ public class ProductModel implements Model {
     private String productNote;
     private String productWarning;
     private String optionPartNo;
-
+    private IngredientsModel[] ingredients;
+    private ProductItemsModel[] items;
    
     //optional properties
     private String optionBarCode;
@@ -32,6 +33,7 @@ public class ProductModel implements Model {
     private String optionWidth;
     private String productByLine;
     private String productFeature;
+    
     
     /**
      * @return the optionsSize
@@ -272,5 +274,21 @@ public class ProductModel implements Model {
 
     public void setOptionPartNo(String optionPartNo) {
         this.optionPartNo = optionPartNo;
+    }
+ @JsonProperty("Ingredients")
+    public IngredientsModel[] getIngredients() {
+        return ingredients;
+    }
+
+    public void setIngredients(IngredientsModel[] ingredients) {
+        this.ingredients = ingredients;
+    }
+@JsonProperty("Items")
+    public ProductItemsModel[] getItems() {
+        return items;
+    }
+
+    public void setItems(ProductItemsModel[] items) {
+        this.items = items;
     }
 }

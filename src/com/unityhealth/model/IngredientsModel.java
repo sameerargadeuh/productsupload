@@ -25,6 +25,18 @@ public class IngredientsModel implements Model {
     private String orderNumber;
     private String productID;
     private String quantity;
+    private String displayName;
+
+    private String commonName;
+
+    @JsonProperty("IMGatewayCommonName")
+    public String getCommonName() {
+        return commonName;
+    }
+
+    public void setCommonName(String commonName) {
+        this.commonName = commonName;
+    }
 
     /**
      * @return the equivalentValue
@@ -175,7 +187,7 @@ public class IngredientsModel implements Model {
     public void setQuantity(String quantity) {
         this.quantity = quantity;
     }
-    
+
     @Override
     public String toString() {
 
@@ -191,5 +203,19 @@ public class IngredientsModel implements Model {
 
     }
 
+    /**
+     * @return the displayName
+     */
+    @JsonProperty("DisplayIngredients")
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    /**
+     * @param displayName the displayName to set
+     */
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
 
 }

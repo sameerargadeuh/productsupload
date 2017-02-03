@@ -6,7 +6,6 @@
 package com.unityhealth.daoimpl;
 
 import com.unityhealth.dao.IGenericDao;
-import com.unityhealth.model.Tblproductbrand;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

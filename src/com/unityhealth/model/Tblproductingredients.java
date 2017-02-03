@@ -29,7 +29,7 @@ import javax.xml.bind.annotation.XmlRootElement;
     @NamedQuery(name = "Tblproductingredients.findByIID", query = "SELECT t FROM Tblproductingredients t WHERE t.iID = :iID"),
     @NamedQuery(name = "Tblproductingredients.findByVCode", query = "SELECT t FROM Tblproductingredients t WHERE t.vCode = :vCode"),
     @NamedQuery(name = "Tblproductingredients.findByVName", query = "SELECT t FROM Tblproductingredients t WHERE t.vName = :vName"),
-    @NamedQuery(name = "Tblproductingredients.findByVNameLst", query = "SELECT t FROM Tblproductingredients t WHERE t.vName in :vNameLst"),
+    @NamedQuery(name = "Tblproductingredients.findByVNameLst", query = "SELECT Distinct t FROM Tblproductingredients t WHERE t.vName in :vNameLst"),
     @NamedQuery(name = "Tblproductingredients.findByVCommonName", query = "SELECT t FROM Tblproductingredients t WHERE t.vCommonName = :vCommonName"),
     @NamedQuery(name = "Tblproductingredients.findByVDesc", query = "SELECT t FROM Tblproductingredients t WHERE t.vDesc = :vDesc"),
     @NamedQuery(name = "Tblproductingredients.findByBCustom", query = "SELECT t FROM Tblproductingredients t WHERE t.bCustom = :bCustom"),
@@ -56,6 +56,8 @@ public class Tblproductingredients implements Serializable {
     private String vCustomBy;
     @Column(name = "vIngredientID")
     private String vIngredientID;
+    @Column(name = "vDisplayName")
+    private String vDisplayName;
     public Tblproductingredients() {
     }
 
@@ -156,6 +158,20 @@ public class Tblproductingredients implements Serializable {
      */
     public void setvIngredientID(String vIngredientID) {
         this.vIngredientID = vIngredientID;
+    }
+
+    /**
+     * @return the vDisplayName
+     */
+    public String getvDisplayName() {
+        return vDisplayName;
+    }
+
+    /**
+     * @param vDisplayName the vDisplayName to set
+     */
+    public void setvDisplayName(String vDisplayName) {
+        this.vDisplayName = vDisplayName;
     }
     
 }

@@ -22,6 +22,7 @@ public class UHJParser {
     private File file;
 
     private Model[] pModel;
+    private Model biocModel;
 
     
     
@@ -38,6 +39,21 @@ public class UHJParser {
            System.out.println(pm.toString());
         }
        return pModel;
+    }
+    
+      public Model parse(String fileName, Model model) throws IOException{
+        
+        objectMapper = new ObjectMapper();
+        //file = new File("E:\\biocueticalsload\\product.json");
+        file = new File(fileName);
+        
+          biocModel =  objectMapper.readValue(file,model.getClass());
+//        for(Model pm:pModel){
+//           System.out.println(pm.toString());
+//        }
+
+System.out.println(biocModel.toString());
+       return biocModel;
     }
 
     /**
