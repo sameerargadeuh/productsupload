@@ -87,11 +87,12 @@ for(int i =0; i< workbook.getNumberOfSheets(); i++ )       {
         Model jsonModel;
         if(jsonModelType.equals("product")){
               jsonModel = new ProductModel();
+              ((ProductModel) jsonModel).setProductID(String.valueOf(row.getRowNum()+1));
         }
         else{
              jsonModel = new IngredientsModel();
         }
-        
+     //    System.out.println(row.getRowNum()+1);
 //        JSONObject jRow = new JSONObject();
 
         // Iterate through the cells.
@@ -99,15 +100,17 @@ for(int i =0; i< workbook.getNumberOfSheets(); i++ )       {
         for ( Iterator<Cell> cellsIT = row.cellIterator(); cellsIT.hasNext(); )
         {//System.out.println("com.unityhealth.ExcelToJsonConverter.sheetReader()---->>>>>"+ row.getRowNum());
             Cell cell = cellsIT.next();
-            
+           
            // cell.getStringCellValue();
            switch (cell.getCellType()) {
                 case Cell.CELL_TYPE_STRING:
                    // System.out.println(cell.getRichStringCellValue().getString());
+                     
                      switch (cell.getColumnIndex()) {
                          case 0: 
                              if( jsonModel instanceof ProductModel){
-                                ((ProductModel) jsonModel).setProductID(String.valueOf(row.getRowNum()+1));
+                                 //System.out.println(row.getRowNum()+1);
+                              //  ((ProductModel) jsonModel).setProductID(String.valueOf(row.getRowNum()+1));
                              }else{
                                  ((IngredientsModel)jsonModel).setEquivalentValue(cell.getRichStringCellValue().getString());
                              }

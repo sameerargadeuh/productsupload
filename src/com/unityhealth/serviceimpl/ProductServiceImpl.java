@@ -77,6 +77,45 @@ public class ProductServiceImpl implements IProductService {
         System.out.println("Total Number of Products to be inserted " + productJsonArray.length);
         try {
             Tblproduct product;
+            
+            for (ProductModel productModel : productJsonArray) {
+                if(productModel.getItems()!=null){
+                for (ProductItemsModel item : productModel.getItems()) {
+                    productDao.beginTransaction();
+                    saveIndividualProduct(productModel,item,prodWarningsMap);
+                    productDao.commitTransaction();
+                  
+                }
+                }else{
+                    productDao.beginTransaction();
+                    saveIndividualProduct(productModel,null,prodWarningsMap);
+                    productDao.commitTransaction();
+                }
+                if(productModel.getProductBrand()!= null && productModel.getProductBrand().equalsIgnoreCase("BC")){
+                    System.out.println("bioceuticals");
+                     productIngredientsService.saveProductIngredients(productModel.getIngredients());
+                }
+                
+            }
+
+            System.out.println("Finished inserting products");
+            System.out.println("Started inserting Warnings");
+            //setProdWarnings(prodWarningsMap);
+            updateNewProductId();
+            System.out.println("Finished inserting Warnings");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+        return true;
+    }
+
+      //backup plan
+    public boolean saveProduct2(ProductModel[] productJsonArray) {
+        Map<String, String> prodWarningsMap = new LinkedHashMap<String, String>();
+        System.out.println("Total Number of Products to be inserted " + productJsonArray.length);
+        try {
+            Tblproduct product;
 
             for (ProductModel productModel : productJsonArray) {
                 for (ProductItemsModel item : productModel.getItems()) {
@@ -84,7 +123,16 @@ public class ProductServiceImpl implements IProductService {
                     product = new Tblproduct();
                     StringBuilder searchSB = new StringBuilder();
                     // product.setIBrandID(getBrandID(productModel.getProductBrand()));
-                    product.setIBrandID(15);
+                    if(productModel.getProductBrand().equalsIgnoreCase("BC"))
+                         product.setIBrandID(15);
+                    else{
+                         int bid = getBrandID(productModel.getProductBrand());
+                         if (bid ==0)
+                             bid = 88;
+                          product.setIBrandID(bid);
+                    }
+                       
+                       
                     if (productModel.getProductName() != null && !productModel.getProductName().trim().equals("")) {
                         searchSB.append(productModel.getProductName());
                         searchSB.append(hashString);
@@ -100,10 +148,7 @@ public class ProductServiceImpl implements IProductService {
 
                     searchSB.append(hashString);
 
-//                if (productModel.getOptionSize() != null && productModel.getOptionSize().indexOf(" ") > 0) {
-//                    product.setVSize(productModel.getOptionSize().substring(0, productModel.getOptionSize().indexOf(" ")));
-//                    product.setVQtyUnit(productModel.getOptionSize().substring(productModel.getOptionSize().indexOf(" ") + 1, productModel.getOptionSize().length() - 1));
-//                }
+
                     if (item.getSize() != null && item.getSize().indexOf(" ") > 0) {
                         product.setVSize(item.getSize().substring(0, item.getSize().indexOf(" ")));
                         product.setVQtyUnit(item.getSize().substring(item.getSize().indexOf(" ") + 1, item.getSize().length() - 1));
@@ -133,6 +178,7 @@ public class ProductServiceImpl implements IProductService {
                     productDao.commitTransaction();
                   
                 }
+                if(productModel.getProductBrand().equalsIgnoreCase("BC"))
                  productIngredientsService.saveProductIngredients(productModel.getIngredients());
             }
 
@@ -147,13 +193,15 @@ public class ProductServiceImpl implements IProductService {
         }
         return true;
     }
-
     private int getBrandID(String brandName) {
         Map<String, String> params = new TreeMap<String, String>();
         params.put("vName", brandName);
 
         List<Tblproductbrand> result = productBrandDao.readByNameDQuery("Tblproductbrand.findByVName", params);
-        return result.get(0).getIID();
+        if(!result.isEmpty()){
+            return result.get(0).getIID();
+        }
+        return 0;
     }
 
     private List<Tblproductwarningcodes> setProdWarnings(Map<String, String> prodWarningsMap) {
@@ -315,4 +363,77 @@ public class ProductServiceImpl implements IProductService {
 	is.close();
 	os.close();
 }
+    private boolean saveIndividualProduct(ProductModel productModel,ProductItemsModel item,Map<String, String> prodWarningsMap){
+          try {
+            Tblproduct product;
+
+        
+                    product = new Tblproduct();
+                    StringBuilder searchSB = new StringBuilder();
+                    // product.setIBrandID(getBrandID(productModel.getProductBrand()));
+                    if(productModel.getProductBrand() != null && productModel.getProductBrand().equalsIgnoreCase("BC"))
+                         product.setIBrandID(15);
+                    else  {int bid = getBrandID(productModel.getProductBrand());
+                         if (bid ==0)
+                             bid = 88;
+                          product.setIBrandID(bid);}
+                        
+                    if (productModel.getProductName() != null && !productModel.getProductName().trim().equals("")) {
+                        searchSB.append(productModel.getProductName());
+                        searchSB.append(hashString);
+                    }
+                    product.setVName(productModel.getProductName());
+                    product.setIAUSTL(productModel.getProductAustl());
+                    searchSB.append(productModel.getProductAustl());
+                    searchSB.append(hashString);
+                    if (productModel.getProductNote() != null) {
+                        product.setVDescription(Jsoup.parse(productModel.getProductNote()).text());
+                        searchSB.append(Jsoup.parse(productModel.getProductNote()).text());
+                    }
+
+                    searchSB.append(hashString);
+
+                    if(item!=null){
+                         if (item.getSize() != null && item.getSize().indexOf(" ") > 0) {
+                        product.setVSize(item.getSize().substring(0, item.getSize().indexOf(" ")));
+                        product.setVQtyUnit(item.getSize().substring(item.getSize().indexOf(" ") + 1, item.getSize().length() - 1));
+                    }
+                          productImagesDao.beginTransaction();
+                     Tblproductimages productImages = new Tblproductimages();
+                    for( ProductImageModel productImageModel:item.getImages()){
+                        if(productImageModel.getImageDimension().equals("190x250")){
+                           
+                            productImages.setIBrandID(15);
+                            productImages.setVFilename(productImageModel.getImageFile().substring(productImageModel.getImageFile().lastIndexOf("/")+1));
+                            productImagesDao.create(productImages);
+                            //productImageModel.getCDNImageUrl();
+                            //saveImage(productImageModel.getCDNImageUrl());
+                            
+                        }
+                    }
+                    productImagesDao.commitTransaction();
+                     product.setVImageID(productImages.getIID());
+                              product.setvPartNo(item.getPartNo());
+                    }
+                   
+                    if (productModel.getProductDosage() != null) {
+                        product.setVDosage(Jsoup.parse(productModel.getProductDosage()).text());
+                    }
+                   
+                   
+                    product.setvProductId(productModel.getProductID());
+                   
+                    product.setVSearchText(searchSB.toString());
+                    productDao.create(product);
+                    prodWarningsMap.put(productModel.getProductID(), productModel.getProductWarning());
+                   // productDao.commitTransaction();
+                  
+                }catch(Exception e){
+                    e.printStackTrace();
+                    return false;
+                }
+                if(productModel.getProductBrand()!= null && productModel.getProductBrand().equalsIgnoreCase("BC"))
+                 productIngredientsService.saveProductIngredients(productModel.getIngredients());
+     return true;
+    }
 }
