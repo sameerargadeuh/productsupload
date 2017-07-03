@@ -29,11 +29,12 @@ import javax.xml.bind.annotation.XmlRootElement;
     @NamedQuery(name = "Tblproductingredients.findByIID", query = "SELECT t FROM Tblproductingredients t WHERE t.iID = :iID"),
     @NamedQuery(name = "Tblproductingredients.findByVCode", query = "SELECT t FROM Tblproductingredients t WHERE t.vCode = :vCode"),
     @NamedQuery(name = "Tblproductingredients.findByVName", query = "SELECT t FROM Tblproductingredients t WHERE t.vName = :vName"),
-    @NamedQuery(name = "Tblproductingredients.findByVNameLst", query = "SELECT Distinct t FROM Tblproductingredients t WHERE t.vName in :vNameLst"),
+    @NamedQuery(name = "Tblproductingredients.findByVNameLst", query = "SELECT Distinct t FROM Tblproductingredients t WHERE t.vName in :vNameLst GROUP BY t.vName"),
     @NamedQuery(name = "Tblproductingredients.findByVCommonName", query = "SELECT t FROM Tblproductingredients t WHERE t.vCommonName = :vCommonName"),
     @NamedQuery(name = "Tblproductingredients.findByVDesc", query = "SELECT t FROM Tblproductingredients t WHERE t.vDesc = :vDesc"),
     @NamedQuery(name = "Tblproductingredients.findByBCustom", query = "SELECT t FROM Tblproductingredients t WHERE t.bCustom = :bCustom"),
-    @NamedQuery(name = "Tblproductingredients.findByVCustomBy", query = "SELECT t FROM Tblproductingredients t WHERE t.vCustomBy = :vCustomBy")})
+    @NamedQuery(name = "Tblproductingredients.findByVCustomBy", query = "SELECT t FROM Tblproductingredients t WHERE t.vCustomBy = :vCustomBy"),
+    @NamedQuery(name = "Tblproductingredients.UpdateByVName", query = "UPDATE Tblproductingredients t SET t.vCommonName = :commonName WHERE t.vName = :vName")})
 public class Tblproductingredients implements Serializable {
 
     private static final long serialVersionUID = 1L;

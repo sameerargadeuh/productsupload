@@ -9,6 +9,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.unityhealth.model.IngredientsModel;
 import com.unityhealth.model.Model;
+import com.unityhealth.model.ProductImageModel;
 import com.unityhealth.model.ProductModel;
 import java.io.File;
 import java.io.FileInputStream;
@@ -46,7 +47,7 @@ public class ExcelToJsonConverter {
         
         FileInputStream inp;
         try {
-            inp = new FileInputStream("E:\\BioMedica\\SampleProductInputFormat_03022017.xlsx");
+            inp = new FileInputStream("E:\\sanofi\\sanofinaturesown.xlsx");
         
         Workbook workbook = WorkbookFactory.create(inp);
 
@@ -56,8 +57,10 @@ for(int i =0; i< workbook.getNumberOfSheets(); i++ )       {
     Sheet sheet = workbook.getSheetAt(i);
     if( i == 0){
         sheetReader(sheet ,"product");
-    }else{
+    }else if( i == 1){
         sheetReader(sheet ,"ingredients");
+    }else if( i == 2){
+        sheetReader(sheet ,"images");
     }
     
    // productsList.add(product);
@@ -81,16 +84,20 @@ for(int i =0; i< workbook.getNumberOfSheets(); i++ )       {
          ObjectMapper mapper = new ObjectMapper();
           List<ProductModel> productsList = new ArrayList<ProductModel>();
            List<IngredientsModel> iModelList = new ArrayList<IngredientsModel>();
+           
+           List<ProductImageModel> imageModellList = new ArrayList<ProductImageModel>();
           for ( Iterator<Row> rowsIT = sheet.rowIterator(); rowsIT.hasNext(); )
     {
         Row row = rowsIT.next();
-        Model jsonModel;
+        Model jsonModel = null;
         if(jsonModelType.equals("product")){
               jsonModel = new ProductModel();
               ((ProductModel) jsonModel).setProductID(String.valueOf(row.getRowNum()+1));
         }
-        else{
+        else if(jsonModelType.equals("ingredients")){
              jsonModel = new IngredientsModel();
+        } else if(jsonModelType.equals("images")){
+             jsonModel = new ProductImageModel();
         }
      //    System.out.println(row.getRowNum()+1);
 //        JSONObject jRow = new JSONObject();
@@ -100,90 +107,189 @@ for(int i =0; i< workbook.getNumberOfSheets(); i++ )       {
         for ( Iterator<Cell> cellsIT = row.cellIterator(); cellsIT.hasNext(); )
         {//System.out.println("com.unityhealth.ExcelToJsonConverter.sheetReader()---->>>>>"+ row.getRowNum());
             Cell cell = cellsIT.next();
-           
+           cell.setCellType(Cell.CELL_TYPE_STRING);
            // cell.getStringCellValue();
            switch (cell.getCellType()) {
                 case Cell.CELL_TYPE_STRING:
                    // System.out.println(cell.getRichStringCellValue().getString());
-                     
+                     if( jsonModel instanceof ProductModel){ 
                      switch (cell.getColumnIndex()) {
                          case 0: 
-                             if( jsonModel instanceof ProductModel){
+                             // product id
                                  //System.out.println(row.getRowNum()+1);
                               //  ((ProductModel) jsonModel).setProductID(String.valueOf(row.getRowNum()+1));
-                             }else{
-                                 ((IngredientsModel)jsonModel).setEquivalentValue(cell.getRichStringCellValue().getString());
-                             }
+                              ((ProductModel) jsonModel).setProductID(String.valueOf(cell.getRichStringCellValue().getString()));
+                            
                              break;
                              case 1: 
-                             if( jsonModel instanceof ProductModel){
+                           //optionsize
                                  ((ProductModel) jsonModel).setOptionsSize(cell.getRichStringCellValue().getString());
                                  
-                             }else{
-                                 //((IngredientsModel)jsonModel).setEquivalentValue(cell.getRichStringCellValue().getString());
-                             }
+                            
                              break;
                              case 2: 
-                             if( jsonModel instanceof ProductModel){
+                            //austl
                                  ((ProductModel) jsonModel).setProductAustl(cell.getRichStringCellValue().getString());
                                  
-                             }else{
-                                 ((IngredientsModel)jsonModel).setIngredientName(cell.getRichStringCellValue().getString());
-                             }
+                            
                              break;
                              case 3: 
-                             if( jsonModel instanceof ProductModel){
-                                 ((ProductModel) jsonModel).setProductBrand(cell.getRichStringCellValue().getString());
-                                 
-                             }else{
-                                 //((IngredientsModel)jsonModel).setQuantity(cell.getRichStringCellValue().getString());
-                             }
+                             // dosage
+                                // ((ProductModel) jsonModel).setProductBrand(cell.getRichStringCellValue().getString());
+                                  ((ProductModel) jsonModel).setProductDosage(cell.getRichStringCellValue().getString());
+                             
                              break;
                              case 4: 
-                             if( jsonModel instanceof ProductModel){
-                                 ((ProductModel) jsonModel).setProductDosage(cell.getRichStringCellValue().getString());
+                             // name
+                                ((ProductModel) jsonModel).setProductName(cell.getRichStringCellValue().getString());
                                  
-                             }else{
-                                // ((IngredientsModel)jsonModel).setProductID(cell.getRichStringCellValue().getString());
-                            
-                             }
+                             
                              break;
                              case 5: 
-                             if( jsonModel instanceof ProductModel){
+                             //note
                                 // ((ProductModel) jsonModel).setProductWarning(cell.getRichStringCellValue().getString());
+                                 ((ProductModel) jsonModel).setProductNote(cell.getRichStringCellValue().getString());
                                 
-                             }else{
-                                 ((IngredientsModel)jsonModel).setQuantity(cell.getRichStringCellValue().getString());
-                             }
+                            
                              break;
                              case 6: 
-                             if( jsonModel instanceof ProductModel){
-                                ((ProductModel) jsonModel).setProductName(cell.getRichStringCellValue().getString());
+                            // indication
+                                ((ProductModel) jsonModel).setProductIndications(cell.getRichStringCellValue().getString());
                                 
-                             } else{
-                                 //System.out.println("what will it print?? " + cell.getRichStringCellValue().getString());
-                                 ((IngredientsModel)jsonModel).setProductID(cell.getRichStringCellValue().getString());
                             
-                             }
                              break;
                              case 7: 
-                             if( jsonModel instanceof ProductModel){
+                            //warning
                                  ((ProductModel) jsonModel).setProductWarning(cell.getRichStringCellValue().getString());
                                 
-                             }
+                             
                              break;
                      }
-                   
+                     }
+                     if( jsonModel instanceof IngredientsModel){ 
+                     switch (cell.getColumnIndex()) {
+                         case 0: 
+                             // product id
+                                 //System.out.println(row.getRowNum()+1);
+                              //  ((ProductModel) jsonModel).setProductID(String.valueOf(row.getRowNum()+1));
+                             
+                               //  ((IngredientsModel)jsonModel).setEquivalentValue(cell.getRichStringCellValue().getString());
+                             
+                             break;
+                             case 1: // name
+                             
+                                 //((IngredientsModel)jsonModel).setEquivalentValue(cell.getRichStringCellValue().getString());
+                                    ((IngredientsModel)jsonModel).setIngredientName(cell.getRichStringCellValue().getString());
+                             break;
+                             case 2: // product id
+                             
+                                 ((IngredientsModel)jsonModel).setProductID(cell.getRichStringCellValue().getString());
+                             
+                             break;
+                             case 3: // sceintific
+                            
+                                 //((IngredientsModel)jsonModel).setQuantity(cell.getRichStringCellValue().getString());
+                                 ((IngredientsModel)jsonModel).setIngredientScientific(cell.getRichStringCellValue().getString());
+                             
+                             break;
+                             case 4: // order number
+                            
+                                // ((IngredientsModel)jsonModel).setProductID(cell.getRichStringCellValue().getString());
+                            ((IngredientsModel)jsonModel).setOrderNumber(cell.getRichStringCellValue().getString());
+                            
+                             break;
+                             case 5: //
+                            
+                                 ((IngredientsModel)jsonModel).setQuantity(cell.getRichStringCellValue().getString());
+                             
+                             break;
+                             case 6: // unit
+                            ((IngredientsModel)jsonModel).setQuantity(((IngredientsModel)jsonModel).getQuantity() + cell.getRichStringCellValue().getString());
+                                 //System.out.println("what will it print?? " + cell.getRichStringCellValue().getString());
+                                 
+                            
+                           
+                             break;
+                              
+                              case 7: // equivalent ing
+                                  if(!cell.getRichStringCellValue().getString().trim().equals("")){
+                            ((IngredientsModel)jsonModel).setEquivalentValue("equiv. " + cell.getRichStringCellValue().getString());
+                                  }
+                                 //System.out.println("what will it print for equival ?? " + cell.getRichStringCellValue().getString());
+                                 
+                            
+                           
+                             break;
+                              case 8: // equivalent quantity
+                                  if(((IngredientsModel) jsonModel).getEquivalentValue() != null && !((IngredientsModel) jsonModel).getEquivalentValue().equals("") ){
+                                      ((IngredientsModel)jsonModel).setEquivalentValue(((IngredientsModel) jsonModel).getEquivalentValue() + "|" + cell.getRichStringCellValue().getString());
+                                  }
+                            
+                                 //System.out.println("what will it print?? " + cell.getRichStringCellValue().getString());
+                                 
+                            
+                           
+                             break;
+                              case 9: // equivalent qty
+                                  if(((IngredientsModel) jsonModel).getEquivalentValue() != null && !((IngredientsModel) jsonModel).getEquivalentValue().equals("") ){
+                            ((IngredientsModel)jsonModel).setEquivalentValue(((IngredientsModel) jsonModel).getEquivalentValue() + cell.getRichStringCellValue().getString());
+                                  } //System.out.println("what will it print?? " + cell.getRichStringCellValue().getString());
+                                 
+                            
+                           
+                             break;
+                             
+                     }
+           }
+                      if( jsonModel instanceof ProductImageModel){ 
+                     switch (cell.getColumnIndex()) {
+                         case 0: //url
+                             ((ProductImageModel)jsonModel).setCDNImageUrl(cell.getRichStringCellValue().getString());
+                             break;
+                             case 1: //product id 
+                                 ((ProductImageModel)jsonModel).setProductID(cell.getRichStringCellValue().getString());
+                             break;
+                     }
+                      }
                     break;
                     
-               case Cell.CELL_TYPE_NUMERIC:
-                    switch (cell.getColumnIndex()) {
-                         case 6: //System.out.println("what will it print?? " + cell.getNumericCellValue());
-                         String productID = String.valueOf(cell.getNumericCellValue());
-                         //System.out.println(cell.getNumericCellValue());
-                                ((IngredientsModel)jsonModel).setProductID(productID.substring(0, productID.indexOf(".")));
-                                    break;
+              case Cell.CELL_TYPE_NUMERIC:
+                   if( jsonModel instanceof ProductModel){ 
+                     switch (cell.getColumnIndex()) {
+                         case 0: 
+                             // product id
+                                 //System.out.println(row.getRowNum()+1);
+                              //  ((ProductModel) jsonModel).setProductID(String.valueOf(row.getRowNum()+1));
+                         //     ((ProductModel) jsonModel).setProductID(String.valueOf(Integer.parseInt(String.valueOf(cell.getNumericCellValue()))));
+                            
+                             break;
+                    
                     }
+                   }
+                   if( jsonModel instanceof IngredientsModel){ 
+                     switch (cell.getColumnIndex()) {
+                         case 2: 
+                             // product id
+                                 //System.out.println(row.getRowNum()+1);
+                              //  ((ProductModel) jsonModel).setProductID(String.valueOf(row.getRowNum()+1));
+                        //      ((IngredientsModel) jsonModel).setProductID(String.valueOf((cell.getNumericCellValue())));
+                            
+                             break;
+                    
+                    }
+                   } 
+                   if( jsonModel instanceof ProductImageModel){ 
+                     switch (cell.getColumnIndex()) {
+                         case 0: 
+                             // product id
+                                 //System.out.println(row.getRowNum()+1);
+                              //  ((ProductModel) jsonModel).setProductID(String.valueOf(row.getRowNum()+1));
+                            //  ((ProductImageModel) jsonModel).setProductID(String.valueOf(Integer.parseInt(String.valueOf(cell.getNumericCellValue()))));
+                            
+                             break;
+                    
+                    }
+                   } break;
 //                    if (DateUtil.isCellDateFormatted(cell)) {
 //                        System.out.println(cell.getDateCellValue());
 //                        System.out.println("date");
@@ -207,8 +313,11 @@ for(int i =0; i< workbook.getNumberOfSheets(); i++ )       {
              
               if( jsonModel instanceof ProductModel){
                   productsList.add((ProductModel) jsonModel);
-              }else{
+              }else if( jsonModel instanceof IngredientsModel){ 
                   iModelList.add((IngredientsModel)jsonModel);
+              } 
+              else if( jsonModel instanceof ProductImageModel){ 
+                  imageModellList.add((ProductImageModel)jsonModel);
               }
               
    //     jRow.put( "cell", cells );
@@ -238,6 +347,10 @@ for(int i =0; i< workbook.getNumberOfSheets(); i++ )       {
         jsonInString = mapper.writerWithDefaultPrettyPrinter()
                 .writeValueAsString(iModelList);
            System.out.println("JsonInString " +jsonInString);
+           
+            jsonInString = mapper.writerWithDefaultPrettyPrinter()
+                .writeValueAsString(imageModellList);
+            System.out.println("JsonInString " +jsonInString);
         } catch (JsonProcessingException ex) {
             Logger.getLogger(ExcelToJsonConverter.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -247,11 +360,13 @@ for(int i =0; i< workbook.getNumberOfSheets(); i++ )       {
 
         try {
             if(jsonModelType.equals("product")){
-               mapper.writeValue(new File("E:\\BioMedica\\products.json"), productsList);
+               mapper.writeValue(new File("E:\\sanofi\\sanofinaturesownproducts113.json"), productsList);
                
         }
-        else{
-             mapper.writeValue(new File("E:\\BioMedica\\ingredients.json"), iModelList);
+            else if(jsonModelType.equals("ingredients")){
+             mapper.writeValue(new File("E:\\sanofi\\CenovisOwnIngredientsnouse113.json"), iModelList);
+        }else if(jsonModelType.equals("images")){
+             mapper.writeValue(new File("E:\\sanofi\\CenovisOwnImages113nouse.json"), imageModellList);
         }
           
             

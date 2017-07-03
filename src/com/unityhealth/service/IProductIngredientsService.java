@@ -14,4 +14,5 @@ import com.unityhealth.model.ProductModel;
  */
 public interface IProductIngredientsService {
      public boolean saveProductIngredients(IngredientsModel[] ingredientsJsonArray);
+     public boolean updateProductIngredientsCommonNames(IngredientsModel[] ingredientsJsonArray);
 }

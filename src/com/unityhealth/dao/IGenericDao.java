@@ -32,6 +32,7 @@ public interface IGenericDao <T> {
     public List<T> readByNameDQueryList(String name,Map<String, List<String>>params);
     public List<T> readByNameDQueryNoParam(String name);
     public void updateByNamedQueryInt(String name, Map<String, Integer> params);
+    public void updateByNamedQuery(String name, Map<String, String> params);
     void beginTransaction();
     void commitTransaction();
     void releasePersistenceContext();

@@ -11,6 +11,8 @@
     <class>com.unityhealth.model.Tblproductingredientassoctemp</class>
     <class>com.unityhealth.model.Tblproductnewid</class>
     <class>com.unityhealth.model.Tblproductimages</class>
+    <class>com.unityhealth.model.Tblproductindicationassoc</class>
+    <class>com.unityhealth.model.Tblproductindications</class>
     <properties>
       <property name="javax.persistence.jdbc.url" value="jdbc:mysql://localhost:3306/imgateway?autoReconnect=true&amp;autoReconnectForPools=true"/>
       <property name="javax.persistence.jdbc.user" value="root"/>

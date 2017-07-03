@@ -13,6 +13,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ProductModel implements Model {
 
+    
+
     private String optionSize;
     private String productAustl;
     private String productDosage;
@@ -22,6 +24,7 @@ public class ProductModel implements Model {
     private String productNote;
     private String productWarning;
     private String optionPartNo;
+    private String productURL;
     private IngredientsModel[] ingredients;
     private ProductItemsModel[] items;
    
@@ -33,7 +36,7 @@ public class ProductModel implements Model {
     private String optionWidth;
     private String productByLine;
     private String productFeature;
-    
+    private String productIndications;
     
     /**
      * @return the optionsSize
@@ -83,7 +86,7 @@ public class ProductModel implements Model {
     /**
      * @return the productBrand
      */
-    @JsonProperty("ProductBrand")
+    @JsonProperty("Brand")
     public String getProductBrand() {
         return productBrand;
     }
@@ -290,5 +293,34 @@ public class ProductModel implements Model {
 
     public void setItems(ProductItemsModel[] items) {
         this.items = items;
+    }
+
+    /**
+     * @return the productURL
+     */
+    @JsonProperty("BioceuticalsURL")
+    public String getProductURL() {
+        return productURL;
+    }
+
+    /**
+     * @param productURL the productURL to set
+     */
+    public void setProductURL(String productURL) {
+        this.productURL = productURL;
+    }
+    /**
+     * @return the productIndications
+     */
+     @JsonProperty("ProductIndications")
+    public String getProductIndications() {
+        return productIndications;
+    }
+
+    /**
+     * @param productIndications the productIndications to set
+     */
+    public void setProductIndications(String productIndications) {
+        this.productIndications = productIndications;
     }
 }

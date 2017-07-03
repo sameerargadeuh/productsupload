@@ -26,6 +26,7 @@ public class IngredientsModel implements Model {
     private String productID;
     private String quantity;
     private String displayName;
+    private String unit;
 
     private String commonName;
 
@@ -216,6 +217,20 @@ public class IngredientsModel implements Model {
      */
     public void setDisplayName(String displayName) {
         this.displayName = displayName;
+    }
+
+    /**
+     * @return the unit
+     */
+    public String getUnit() {
+        return unit;
+    }
+
+    /**
+     * @param unit the unit to set
+     */
+    public void setUnit(String unit) {
+        this.unit = unit;
     }
 
 }

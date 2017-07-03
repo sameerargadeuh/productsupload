@@ -188,4 +188,18 @@ public class GenericDaoImpl<T> implements IGenericDao<T> {
         }
     }
 
+    @Override
+    public void updateByNamedQuery(String name, Map<String, String> params) {
+        try{
+        TypedQuery<T> query
+            = entityManager.createNamedQuery(name, type);
+       for(String key:params.keySet()){
+            query.setParameter(key, params.get(key));
+        }
+        
+        query.executeUpdate();
+        }catch(Exception e){
+            e.printStackTrace();
+        }   }
+
 }

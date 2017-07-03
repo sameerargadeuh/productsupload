@@ -23,6 +23,7 @@ public class ProductImageModel implements Model {
             private String imageDimension;  //"ImageFile"
             private String CDN;  //"ImageFile"
             private String CDNImageUrl;  //"ImageFile"
+            private String productID;
  @JsonProperty("ImageFile")
     public String getImageFile() {
         return imageFile;
@@ -59,5 +60,20 @@ public class ProductImageModel implements Model {
         this.CDNImageUrl = CDNImageUrl;
     }
  //"ImageFile"
+
+    /**
+     * @return the productID
+     */
+    @JsonProperty("productID")
+    public String getProductID() {
+        return productID;
+    }
+
+    /**
+     * @param productID the productID to set
+     */
+    public void setProductID(String productID) {
+        this.productID = productID;
+    }
 
 }

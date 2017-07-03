@@ -21,11 +21,10 @@ import java.util.logging.Logger;
 
 /**
  *
- * @author Clinton
+ * @author Sameer S Argade
  */
-public class JPForProducts {
-
-    public static void main(String[] agrs) {
+public class WarningUpdater {
+     public static void main(String[] agrs) {
         Properties prop = new Properties();
         InputStream input = null;
         int brandId = 0;
@@ -54,18 +53,13 @@ public class JPForProducts {
             long startTime = System.currentTimeMillis();
             if (brandId == 15){
                  System.out.println("product 15");
-                success = productService.saveProduct((BiocIngredientsModel) jParser.parse(biocModel, biocIngModel),brandId);
-                biocIngModel = (BiocIngredientsModel) jParser.parse(biocModel, biocIngModel);
-            for(ProductModel prodUpdateModel:biocIngModel.getProducts()){
-                 success = ingredientsService.updateProductIngredientsCommonNames(prodUpdateModel.getIngredients());
-            }
+                success = productService.updatewarnings((BiocIngredientsModel) jParser.parse(biocModel, biocIngModel),15);
+              //  biocIngModel = (BiocIngredientsModel) jParser.parse(biocModel, biocIngModel);
+          
      
-            }else {
-                System.out.println("product " + brandId);
-                success = productService.saveProduct((ProductModel[])(jParser.parse(strPModel,pModel)),brandId)
-               &&   ingredientsService.saveProductIngredients((IngredientsModel[])(jParser.parse(strIModel,iModel)));
-
-            }
+            }else{
+             productService.updatewarnings((ProductModel[])(jParser.parse(strPModel,pModel)),brandId);
+        }
          
            
          
