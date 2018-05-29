@@ -11,6 +11,8 @@ import com.unityhealth.dao.IProductImagesDao;
 import com.unityhealth.dao.IProductIndicationsAssocDao;
 import com.unityhealth.dao.IProductIndicationsDao;
 import com.unityhealth.dao.IProductNewIDDao;
+import com.unityhealth.dao.IProductStorageInfoDao;
+import com.unityhealth.dao.IProductStorageTempDao;
 import com.unityhealth.dao.IProductWarningAssocDao;
 import com.unityhealth.dao.IProductWarningCodesDao;
 import com.unityhealth.daoimpl.ProductBrandDaoImpl;
@@ -19,6 +21,8 @@ import com.unityhealth.daoimpl.ProductImagesDaoImpl;
 import com.unityhealth.daoimpl.ProductIndicationsAssocDaoImpl;
 import com.unityhealth.daoimpl.ProductIndicationsDaoImpl;
 import com.unityhealth.daoimpl.ProductNewIDDaoImpl;
+import com.unityhealth.daoimpl.ProductStorageInfoDaoImpl;
+import com.unityhealth.daoimpl.ProductStorageTempDaoImpl;
 import com.unityhealth.daoimpl.ProductWarningAssocDaoImpl;
 import com.unityhealth.daoimpl.ProductWarningCodesDaoImpl;
 import com.unityhealth.model.BiocIngredientsModel;
@@ -31,6 +35,8 @@ import com.unityhealth.model.Tblproductimages;
 import com.unityhealth.model.Tblproductindicationassoc;
 import com.unityhealth.model.Tblproductindications;
 import com.unityhealth.model.Tblproductnewid;
+import com.unityhealth.model.Tblproductstorageinfo;
+import com.unityhealth.model.Tblproductstoragetemp;
 import com.unityhealth.model.Tblproductwarningassoc;
 import com.unityhealth.model.Tblproductwarningcodes;
 import com.unityhealth.service.IProductIngredientsService;
@@ -67,6 +73,8 @@ public class ProductServiceImpl implements IProductService {
     List<Tblproduct> maxIdLst;
     IProductIngredientsService productIngredientsService;
     IProductImagesDao productImagesDao;
+    IProductStorageInfoDao psInfoDao;
+    IProductStorageTempDao psTempDao;
     private String hashString = "#";
 
     public ProductServiceImpl() {
@@ -79,28 +87,33 @@ public class ProductServiceImpl implements IProductService {
         productImagesDao = new ProductImagesDaoImpl();
         pwIndiDao = new ProductIndicationsDaoImpl();
         pwIndiAssocDao = new ProductIndicationsAssocDaoImpl();
+        psInfoDao = new ProductStorageInfoDaoImpl();
+        psTempDao = new ProductStorageTempDaoImpl();
     }
 
     @Override
     public boolean saveProduct(ProductModel[] productJsonArray,Integer brandID) {
         Map<String, String> prodWarningsMap = new LinkedHashMap<String, String>();
          Map<String, String> prodIndicationsMap = new LinkedHashMap<String, String>();
+         Map<String,String> storageInfoMap =  new LinkedHashMap<String, String>();
+         
         System.out.println("Total Number of Products to be inserted " + productJsonArray.length);
         try {
             Tblproduct product;
             
             for (ProductModel productModel : productJsonArray) {
                 if(productModel.getItems()!=null){
+                      System.out.println("bioceuticals");
                 for (ProductItemsModel item : productModel.getItems()) {
                    // productDao.beginTransaction();
                     //System.out.println(productModel.toString());
-                    saveIndividualProduct(productModel,item,prodWarningsMap,brandID,null);
+                    saveIndividualProduct(productModel,item,prodWarningsMap,brandID,null,null);
                    // productDao.commitTransaction();
                   
                 }
                 }else{
                    // productDao.beginTransaction();
-                    saveIndividualProduct(productModel,null,prodWarningsMap,brandID,prodIndicationsMap);
+                    saveIndividualProduct(productModel,null,prodWarningsMap,brandID,prodIndicationsMap,storageInfoMap);
                    // productDao.commitTransaction();
                 }
 //                  System.out.println(productModel.getProductBrand());
@@ -117,6 +130,9 @@ public class ProductServiceImpl implements IProductService {
             if(brandID != 15){
                 setProdIndications(prodIndicationsMap);
             }
+//            if(brandID !=15){
+//                setProdStorage(storageInfoMap);
+//            }
             updateNewProductId();
             System.out.println("Finished inserting Warnings");
         } catch (Exception e) {
@@ -263,6 +279,32 @@ public class ProductServiceImpl implements IProductService {
 
         return results;
     }
+    
+     private List<Tblproductstorageinfo> setProdStorage(Map<String, String> prodStorageinfoMap) {
+        List<Tblproductstorageinfo> results = new ArrayList<Tblproductstorageinfo>();
+        //List<Tblproductstoragetemp> tempResults = new ArrayList<Tblproductstoragetemp>();
+        List<String> storageInfoList = new ArrayList<String>();
+        Map<String, String> params = new HashMap<String, String>();
+        List<String> missingStorageInfoList = null;
+        for (String prodId : prodStorageinfoMap.keySet()) {
+            System.out.println("product warning for productId  " + prodId);
+            storageInfoList = prepareStorageInfoOrTempList(prodStorageinfoMap.get(prodId));
+            params.put("vDesc", prodStorageinfoMap.get(prodId));
+            
+            results = psInfoDao.readByNameDQuery("Tblproductstorageinfo.findByVDesc", params);
+            //tempResults = psTempDao.readByNameDQueryList("Tblproductstoragetemp.findByVDesc", params);
+            missingStorageInfoList = findMissingStorageInfo(storageInfoList, results);
+            if (missingStorageInfoList != null) {
+                createMissingStorageInfo(missingStorageInfoList);
+                results = psInfoDao.readByNameDQuery("Tblproductstorageinfo.findByVDesc", params);
+            }
+            createProductStorageAssociation(prodId, results);
+            //System.out.println("com.unityhealth.serviceimpl.ProductServiceImpl.getProdWarnings()" + missingWarningList);
+        }
+
+        return results;
+    }
+    
 //tobe moved to util 
 
     private List<String> prepareWarningList(String toRemoveHtml) {
@@ -292,6 +334,11 @@ public class ProductServiceImpl implements IProductService {
 
         return warningListFromModel;
     }
+     private List<String> prepareStorageInfoOrTempList(String storageInfoDesc) {
+         List<String> warningListFromModel = new ArrayList<String>();
+         warningListFromModel.add(storageInfoDesc);
+         return warningListFromModel;
+     }
 
     private List<String> findMissingWarnings(List<String> expectedWarnings, List<Tblproductwarningcodes> existingWarningsDesc) {
         List<String> existingWarnigs = prepareExistingWarnings(existingWarningsDesc);
@@ -304,7 +351,20 @@ public class ProductServiceImpl implements IProductService {
         }
 
         return null;
+     }
+     private List<String> findMissingStorageInfo(List<String> expectedStorageInfo, List<Tblproductstorageinfo> existingStorageInfoDesc) {
+        List<String> existingStorageInfo = prepareExistingStorageInfo(existingStorageInfoDesc);
+        if (existingStorageInfo.containsAll(expectedStorageInfo)) {
+            return null;
+        }
+        if (existingStorageInfo.size() <= expectedStorageInfo.size()) {
+            expectedStorageInfo.removeAll(existingStorageInfo);
+            return expectedStorageInfo;
+        }
+
+        return null;
     }
+    
     private List<String> findMissingIndications(List<String> expectedIndications, List<Tblproductindications> existingIndicationsDesc) {
         List<String> existingIndications = prepareExistingIndications(existingIndicationsDesc);
         if (existingIndications.containsAll(expectedIndications)) {
@@ -332,6 +392,20 @@ public class ProductServiceImpl implements IProductService {
         }
         return existingIndications;
     }
+     private List<String> prepareExistingStorageInfo(List<Tblproductstorageinfo> existingStorageInfoDesc) {
+        List<String> existingStorageInfo = new ArrayList<String>();
+        for (Tblproductstorageinfo storageInfo : existingStorageInfoDesc) {
+            existingStorageInfo.add(storageInfo.getVDesc());
+        }
+        return existingStorageInfo;
+    }
+      private List<String> prepareExistingStorageTemp(List<Tblproductstoragetemp> existingStoragetempDesc) {
+        List<String> existingStorageInfo = new ArrayList<String>();
+        for (Tblproductstoragetemp storageInfo : existingStoragetempDesc) {
+            existingStorageInfo.add(storageInfo.getVDesc());
+        }
+        return existingStorageInfo;
+    }
 
     private void createMissingWarnings(List<String> missingWarningList) {
         if (missingWarningList != null) {
@@ -343,6 +417,18 @@ public class ProductServiceImpl implements IProductService {
                 pwCodesDao.create(missingWarning);
             }
             pwCodesDao.commitTransaction();
+        }
+    }
+     private void createMissingStorageInfo(List<String> missingList) {
+        if (missingList != null) {
+            psInfoDao.beginTransaction();
+            for (String warn : missingList) {
+                Tblproductstorageinfo missingWarning = new Tblproductstorageinfo();
+                missingWarning.setVDesc(warn);
+                //missingWarning.setBCustom(Boolean.FALSE);
+                psInfoDao.create(missingWarning);
+            }
+            psInfoDao.commitTransaction();
         }
     }
      private void createMissingIndications(List<String> missingIndicationsList) {
@@ -364,7 +450,29 @@ public class ProductServiceImpl implements IProductService {
         
     }
 
-    private void createProductWarningAssociation(String prodID, List<Tblproductwarningcodes> results) {
+    private void createProductStorageAssociation(String prodID, List<Tblproductstorageinfo> results) {
+        Map<String, String> params = new TreeMap<String, String>();
+        params.put("vProductId", prodID);
+        List<Tblproductwarningassoc> assocs = null;
+        List<Tblproduct> products = productDao.readByNameDQuery("Tblproduct.findByVProductId", params);
+
+        for (Tblproductstorageinfo storageInfo : results) {
+            try {
+                productDao.beginTransaction();
+                for (Tblproduct product : products) {
+                   product.setIStorageInfoID(storageInfo.getIID());
+
+                }
+                productDao.commitTransaction();
+            } catch (Exception e) {
+                System.out.println(storageInfo.getVDesc());
+                e.printStackTrace();
+            }
+        }
+
+    }
+    
+     private void createProductWarningAssociation (String prodID, List<Tblproductwarningcodes> results) {
         Map<String, String> params = new TreeMap<String, String>();
         params.put("vProductId", prodID);
         List<Tblproductwarningassoc> assocs = null;
@@ -394,6 +502,7 @@ public class ProductServiceImpl implements IProductService {
         }
 
     }
+    
     
     private void createProductIndicationsAssociation(String prodID, List<Tblproductindications> indicationsResults) {
         Map<String, String> params = new TreeMap<String, String>();
@@ -483,7 +592,7 @@ public class ProductServiceImpl implements IProductService {
 	is.close();
 	os.close();
 }
-    private boolean saveIndividualProduct(ProductModel productModel,ProductItemsModel item,Map<String, String> prodWarningsMap,Integer brandID,Map<String, String> prodIndicationsMap){
+    private boolean saveIndividualProduct(ProductModel productModel,ProductItemsModel item,Map<String, String> prodWarningsMap,Integer brandID,Map<String, String> prodIndicationsMap, Map<String, String> storageInfoMap){
           try {
             Tblproduct product;
 
@@ -543,14 +652,21 @@ public class ProductServiceImpl implements IProductService {
                     if (productModel.getProductDosage() != null) {
                         product.setVDosage(Jsoup.parse(productModel.getProductDosage()).text());
                     }
-                   
+                  
                    
                     product.setvProductId(productModel.getProductID());
                    
                     product.setVSearchText(searchSB.toString());
                     productDao.create(product);
                     prodWarningsMap.put(productModel.getProductID(), productModel.getProductWarning());
+                    
+                    if( productModel.getProductIndications()!=null){
                     prodIndicationsMap.put(productModel.getProductID(), productModel.getProductIndications());
+                    }
+                     if( productModel.getProductStorage()!=null){
+                    storageInfoMap.put(productModel.getProductID(), productModel.getProductStorage());
+                    }
+                     
                     System.out.println("Product getting Saved" + productModel.getProductName() + " ---- " + productModel.getProductID());
                     productDao.commitTransaction();
                   

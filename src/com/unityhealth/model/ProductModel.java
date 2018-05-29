@@ -13,6 +13,21 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ProductModel implements Model {
 
+    /**
+     * @return the productStorage
+     */
+     @JsonProperty("productStorage")
+    public String getProductStorage() {
+        return productStorage;
+    }
+
+    /**
+     * @param productStorage the productStorage to set
+     */
+    public void setProductStorage(String productStorage) {
+        this.productStorage = productStorage;
+    }
+
     
 
     private String optionSize;
@@ -37,6 +52,7 @@ public class ProductModel implements Model {
     private String productByLine;
     private String productFeature;
     private String productIndications;
+    private String productStorage;
     
     /**
      * @return the optionsSize
@@ -154,6 +170,7 @@ public class ProductModel implements Model {
             + " productName : " + productName
             + " productNote : " + productNote
             + " productNote : " + productWarning
+            + " productStorage : " + productStorage
             + " ]";
 
     }

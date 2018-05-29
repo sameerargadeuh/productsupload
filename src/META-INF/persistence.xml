@@ -13,13 +13,13 @@
     <class>com.unityhealth.model.Tblproductimages</class>
     <class>com.unityhealth.model.Tblproductindicationassoc</class>
     <class>com.unityhealth.model.Tblproductindications</class>
+    <class>com.unityhealth.model.Tblproductstoragetemp</class>
+    <class>com.unityhealth.model.Tblproductstorageinfo</class>
     <properties>
-      <property name="javax.persistence.jdbc.url" value="jdbc:mysql://localhost:3306/imgateway?autoReconnect=true&amp;autoReconnectForPools=true"/>
+      <property name="javax.persistence.jdbc.url" value="jdbc:mysql://localhost:3306/imgateway?zeroDateTimeBehavior=convertToNull"/>
       <property name="javax.persistence.jdbc.user" value="root"/>
       <property name="javax.persistence.jdbc.driver" value="com.mysql.jdbc.Driver"/>
       <property name="javax.persistence.jdbc.password" value="qwasz2004!"/>
-      <property name="eclipselink.logging.file" value="e:\\output.log"/>
-      <property name="eclipselink.logging.level" value="FINE"/>
     </properties>
   </persistence-unit>
 </persistence>

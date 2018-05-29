@@ -15,9 +15,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.poi.EncryptedDocumentException;
@@ -39,7 +41,19 @@ public class ExcelToJsonConverter {
     public static void main(String arg[]){
         
           
-
+Properties prop = new Properties();
+        InputStream input = null;
+        int brandID = 0;
+        String excelSheetName = null ,
+                productJsonName = null,
+                ingredientJsonName = null,
+                imgaeJsonName = null,
+                sheet1Name = null,
+                sheet2Name = null,
+                sheet3Name = null;
+                
+       
+            
    
 
    // logger.info("uploadExcel method");
@@ -47,8 +61,19 @@ public class ExcelToJsonConverter {
         
         FileInputStream inp;
         try {
-            inp = new FileInputStream("E:\\sanofi\\sanofinaturesown.xlsx");
-        
+            input = JPForProducts.class.getClassLoader().getResourceAsStream("application.properties");
+              prop.load(input);
+              excelSheetName = prop.getProperty("excelSheetName");
+              productJsonName = prop.getProperty("productJsonName");
+              ingredientJsonName = prop.getProperty("ingredientJsonName");
+              imgaeJsonName = prop.getProperty("imgaeJsonName");
+              sheet1Name = prop.getProperty("sheet1Name");
+              sheet2Name = prop.getProperty("sheet2Name");
+              sheet3Name = prop.getProperty("sheet3Name");
+           // inp = new FileInputStream("E:\\sanofi\\sanofinaturesown.xlsx");
+             inp = new FileInputStream(excelSheetName);
+        brandID = Integer.parseInt(prop.getProperty("brandId"));
+ System.out.println("brandID >> >> >> " + brandID);
         Workbook workbook = WorkbookFactory.create(inp);
 
 // Get the first Sheet.
@@ -56,11 +81,11 @@ for(int i =0; i< workbook.getNumberOfSheets(); i++ )       {
   
     Sheet sheet = workbook.getSheetAt(i);
     if( i == 0){
-        sheetReader(sheet ,"product");
+        sheetReader(sheet ,sheet1Name,productJsonName,brandID);
     }else if( i == 1){
-        sheetReader(sheet ,"ingredients");
+        sheetReader(sheet ,sheet2Name,ingredientJsonName,brandID);
     }else if( i == 2){
-        sheetReader(sheet ,"images");
+        sheetReader(sheet ,sheet3Name,imgaeJsonName,brandID);
     }
     
    // productsList.add(product);
@@ -80,7 +105,7 @@ for(int i =0; i< workbook.getNumberOfSheets(); i++ )       {
         }
     }
     
-    static void  sheetReader(Sheet sheet,String jsonModelType){
+    static void  sheetReader(Sheet sheet,String jsonModelType,String jsonFileName ,Integer brandID){
          ObjectMapper mapper = new ObjectMapper();
           List<ProductModel> productsList = new ArrayList<ProductModel>();
            List<IngredientsModel> iModelList = new ArrayList<IngredientsModel>();
@@ -118,7 +143,7 @@ for(int i =0; i< workbook.getNumberOfSheets(); i++ )       {
                              // product id
                                  //System.out.println(row.getRowNum()+1);
                               //  ((ProductModel) jsonModel).setProductID(String.valueOf(row.getRowNum()+1));
-                              ((ProductModel) jsonModel).setProductID(String.valueOf(cell.getRichStringCellValue().getString()));
+                            //  ((ProductModel) jsonModel).setProductID(String.valueOf(cell.getRichStringCellValue().getString()));
                             
                              break;
                              case 1: 
@@ -136,33 +161,49 @@ for(int i =0; i< workbook.getNumberOfSheets(); i++ )       {
                              case 3: 
                              // dosage
                                 // ((ProductModel) jsonModel).setProductBrand(cell.getRichStringCellValue().getString());
-                                  ((ProductModel) jsonModel).setProductDosage(cell.getRichStringCellValue().getString());
+                                 
                              
                              break;
                              case 4: 
                              // name
-                                ((ProductModel) jsonModel).setProductName(cell.getRichStringCellValue().getString());
+                                // Logger.getLogger(ExcelToJsonConverter.class.getName()).log(Level.INFO, "naem or dosage cell.getColumnIndex() " + cell.getColumnIndex() + " " +  cell.getRichStringCellValue().getString());
+                                  ((ProductModel) jsonModel).setProductDosage(cell.getRichStringCellValue().getString());
+                                //((ProductModel) jsonModel).setProductName(cell.getRichStringCellValue().getString());
                                  
                              
                              break;
                              case 5: 
                              //note
-                                // ((ProductModel) jsonModel).setProductWarning(cell.getRichStringCellValue().getString());
+                               if(brandID!=88)
                                  ((ProductModel) jsonModel).setProductNote(cell.getRichStringCellValue().getString());
                                 
                             
                              break;
                              case 6: 
                             // indication
-                                ((ProductModel) jsonModel).setProductIndications(cell.getRichStringCellValue().getString());
+                             //   ((ProductModel) jsonModel).setProductIndications(cell.getRichStringCellValue().getString());
+                                  //storage
+                                 if(brandID==88){
+                                 ((ProductModel) jsonModel).setProductName(cell.getRichStringCellValue().getString());
+                                 }else{
+                                     ((ProductModel) jsonModel).setProductIndications(cell.getRichStringCellValue().getString());
+                                 }
+                             
                                 
                             
                              break;
                              case 7: 
                             //warning
+                               //  if(brandID!=88){
                                  ((ProductModel) jsonModel).setProductWarning(cell.getRichStringCellValue().getString());
+                                // }
                                 
-                             
+                             break;
+                             case 8: 
+                            //storage
+                                
+                                 ((ProductModel) jsonModel).setProductStorage(cell.getRichStringCellValue().getString());
+                                 
                              break;
                      }
                      }
@@ -172,38 +213,45 @@ for(int i =0; i< workbook.getNumberOfSheets(); i++ )       {
                              // product id
                                  //System.out.println(row.getRowNum()+1);
                               //  ((ProductModel) jsonModel).setProductID(String.valueOf(row.getRowNum()+1));
-                             
-                               //  ((IngredientsModel)jsonModel).setEquivalentValue(cell.getRichStringCellValue().getString());
+                             if(brandID==88)
+                                 ((IngredientsModel)jsonModel).setEquivalentValue(cell.getRichStringCellValue().getString());
                              
                              break;
                              case 1: // name
                              
                                  //((IngredientsModel)jsonModel).setEquivalentValue(cell.getRichStringCellValue().getString());
+                                  if(brandID!=88)
                                     ((IngredientsModel)jsonModel).setIngredientName(cell.getRichStringCellValue().getString());
                              break;
                              case 2: // product id
-                             
+                              if(brandID!=88)
                                  ((IngredientsModel)jsonModel).setProductID(cell.getRichStringCellValue().getString());
-                             
+                              if(brandID==88)
+                              ((IngredientsModel)jsonModel).setIngredientName(cell.getRichStringCellValue().getString());
                              break;
                              case 3: // sceintific
                             
                                  //((IngredientsModel)jsonModel).setQuantity(cell.getRichStringCellValue().getString());
+                                  if(brandID!=88)
                                  ((IngredientsModel)jsonModel).setIngredientScientific(cell.getRichStringCellValue().getString());
+                                  
                              
                              break;
                              case 4: // order number
-                            
-                                // ((IngredientsModel)jsonModel).setProductID(cell.getRichStringCellValue().getString());
+                             if(brandID==88)
+                                 ((IngredientsModel)jsonModel).setProductID(cell.getRichStringCellValue().getString());
+                             else{
                             ((IngredientsModel)jsonModel).setOrderNumber(cell.getRichStringCellValue().getString());
+                             }
                             
                              break;
                              case 5: //
-                            
+                              
                                  ((IngredientsModel)jsonModel).setQuantity(cell.getRichStringCellValue().getString());
                              
                              break;
                              case 6: // unit
+                                   if(brandID!=88)
                             ((IngredientsModel)jsonModel).setQuantity(((IngredientsModel)jsonModel).getQuantity() + cell.getRichStringCellValue().getString());
                                  //System.out.println("what will it print?? " + cell.getRichStringCellValue().getString());
                                  
@@ -340,7 +388,7 @@ for(int i =0; i< workbook.getNumberOfSheets(); i++ )       {
               // Convert object to JSON string and pretty print
         jsonInString = mapper.writerWithDefaultPrettyPrinter()
                 .writeValueAsString(productsList);
-        System.out.println("JsonInString " +jsonInString);
+     //   System.out.println("JsonInString " +jsonInString);
           jsonInString = mapper.writeValueAsString(iModelList); //iModelList
           
               // Convert object to JSON string and pretty print
@@ -360,13 +408,16 @@ for(int i =0; i< workbook.getNumberOfSheets(); i++ )       {
 
         try {
             if(jsonModelType.equals("product")){
-               mapper.writeValue(new File("E:\\sanofi\\sanofinaturesownproducts113.json"), productsList);
+               //mapper.writeValue(new File("E:\\sanofi\\sanofinaturesownproducts113.json"), productsList);
+                mapper.writeValue(new File(jsonFileName), productsList);
                
         }
             else if(jsonModelType.equals("ingredients")){
-             mapper.writeValue(new File("E:\\sanofi\\CenovisOwnIngredientsnouse113.json"), iModelList);
+           //  mapper.writeValue(new File("E:\\sanofi\\CenovisOwnIngredientsnouse113.json"), iModelList);
+             mapper.writeValue(new File(jsonFileName), iModelList);
         }else if(jsonModelType.equals("images")){
-             mapper.writeValue(new File("E:\\sanofi\\CenovisOwnImages113nouse.json"), imageModellList);
+             //mapper.writeValue(new File("E:\\sanofi\\CenovisOwnImages113nouse.json"), imageModellList);
+             mapper.writeValue(new File(jsonFileName), imageModellList);
         }
           
             
